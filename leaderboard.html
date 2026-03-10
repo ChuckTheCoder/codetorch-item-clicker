@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Leaderboard</title>
+    <style>
+        /* Sleek, dark-mode styling perfect for an iframe */
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            overflow-y: auto; /* Allows scrolling */
+        }
+        
+        .header {
+            text-align: center;
+            font-weight: 900;
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #ffcc00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-row {
+            display: flex;
+            align-items: center;
+            background-color: #2a2a2a;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+
+        .player-row:hover {
+            transform: scale(1.02);
+            background-color: #333;
+        }
+
+        .rank {
+            font-size: 18px;
+            font-weight: bold;
+            width: 35px;
+            color: #888;
+        }
+        
+        /* Special colors for Top 3 */
+        .rank-1 { color: #ffd700; text-shadow: 0 0 5px rgba(255,215,0,0.5); }
+        .rank-2 { color: #c0c0c0; text-shadow: 0 0 5px rgba(192,192,192,0.5); }
+        .rank-3 { color: #cd7f32; text-shadow: 0 0 5px rgba(205,127,50,0.5); }
+
+        .pfp {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            background-color: #444; /* Placeholder color before image loads */
+            border: 2px solid #555;
+        }
+
+        .username {
+            flex-grow: 1;
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #4caf50;
+            font-family: monospace;
+            font-size: 18px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">🏆 Top Players</div>
+    <div id="leaderboard-list">
+        <div class="loading">Fetching data…</div>
+    </div>
+
+    <script>
+        // — PUT YOUR SUPABASE INFO HERE —
+        const SUPABASE_URL = 'https://lriizufytmdvxwcyjtqz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyaWl6dWZ5dG1kdnh3Y3lqdHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMzMzOTMsImV4cCI6MjA4NzgwOTM5M30.dDqU0McuLngEptd7vU3rqcE06qTKxDql4h44hFSGwBc';
+        // ———————————–
+
+        const leaderboardContainer = document.getElementById('leaderboard-list');
+
+        async function loadLeaderboard() {
+            try {
+                // 1. Fetch the leaderboard JSON from your Supabase function
+                // Note: Change the function name in the URL if you named it differently in SQL!
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_global_leaderboard`, {
+                    method: 'POST', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Database error');
+                const players = await response.json();
+
+                // Clear the "Fetching data…" text
+                leaderboardContainer.innerHTML = '';
+
+                if (players.length === 0) {
+                    leaderboardContainer.innerHTML = '<div class="loading">No players found!</div>';
+                    return;
+                }
+
+                // 2. Loop through the players and build the HTML rows
+                players.forEach((player, index) => {
+                    const rank = index + 1;
+                    const row = document.createElement('div');
+                    row.className = 'player-row';
+                    
+                    // Assign special classes for 1st, 2nd, and 3rd place
+                    let rankClass = '';
+                    if (rank === 1) rankClass = 'rank-1';
+                    if (rank === 2) rankClass = 'rank-2';
+                    if (rank === 3) rankClass = 'rank-3';
+
+                    row.innerHTML = `
+                        <div class="rank ${rankClass}">#${rank}</div>
+                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="pfp" id="pfp-${player.username}" />
+                        <div class="username">${player.username}</div>
+                        <div class="score">${player.total_clicks.toLocaleString()}</div>
+                    `;
+                    
+                    leaderboardContainer.appendChild(row);
+
+                    // 3. Trigger the CodeTorch fetch for this specific player
+                    fetchCodeTorchPFP(player.username);
+                });
+
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+                leaderboardContainer.innerHTML = '<div class="loading">Failed to load leaderboard.</div>';
+            }
+        }
+
+        // This function runs in the background for each player
+        async function fetchCodeTorchPFP(username) {
+            try {
+                const res = await fetch(`https://api.codetorch.net/v1/users/${username}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.pfp) {
+                        // Find the empty image tag we created earlier and swap the source
+                        document.getElementById(`pfp-${username}`).src = data.pfp;
+                    }
+                }
+            } catch (e) {
+                console.log(`Could not load PFP for ${username}`);
+            }
+        }
+
+        // Start the process when the page loads
+        loadLeaderboard();
+    </script>
+</body>
+</html>
