@@ -21,11 +21,45 @@
             text-align: center;
             font-weight: 900;
             font-size: clamp(16px, 5vw, 24px); 
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             color: #ffcc00;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
+        /* --- NEW: TABS CSS --- */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            background-color: #333;
+            color: #888;
+            border: 2px solid #444;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: clamp(10px, 3.5vw, 13px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .tab.active {
+            background-color: rgba(255, 204, 0, 0.1);
+            color: #ffcc00;
+            border-color: #ffcc00;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        }
+
+        .tab:hover:not(.active) {
+            background-color: #444;
+            color: white;
+        }
+        /* --------------------- */
 
         .player-row {
             display: flex;
@@ -208,7 +242,13 @@
 </head>
 <body>
 
-    <div class="header">🏆 Top Players</div>
+    <div class="header">🏆 Leaderboards</div>
+    
+    <div class="tabs">
+        <button id="tab-global" class="tab active" onclick="setTab('global')">All-Time Clicks</button>
+        <button id="tab-mission" class="tab" onclick="setTab('mission')">Major Order</button>
+    </div>
+
     <div id="leaderboard-list">
         <div class="loading">Fetching data...</div>
     </div>
@@ -233,6 +273,9 @@
 
         const leaderboardContainer = document.getElementById('leaderboard-list');
         const pfpCache = {};
+        
+        // NEW: Tab State tracking
+        let currentTab = 'global';
 
         const dbHeaders = {
             'Content-Type': 'application/json',
@@ -240,10 +283,30 @@
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         };
 
+        // NEW: Function to switch tabs
+        function setTab(tabName) {
+            if (currentTab === tabName) return; // Do nothing if already on this tab
+            
+            currentTab = tabName;
+            
+            // Toggle active classes on buttons
+            document.getElementById('tab-global').classList.toggle('active', tabName === 'global');
+            document.getElementById('tab-mission').classList.toggle('active', tabName === 'mission');
+            
+            // Instantly clear the list and show loading text to feel responsive
+            leaderboardContainer.innerHTML = '<div class="loading">Fetching data...</div>';
+            
+            // Trigger a fresh load immediately
+            loadLeaderboard();
+        }
+
         async function loadLeaderboard() {
             try {
+                // Dynamically choose the SQL function based on the active tab
+                const endpoint = currentTab === 'global' ? 'fetch_global_leaderboard' : 'fetch_mission_leaderboard';
+
                 const [leaderboardRes, moRes] = await Promise.all([
-                    fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_global_leaderboard`, { method: 'POST', headers: dbHeaders }),
+                    fetch(`${SUPABASE_URL}/rest/v1/rpc/${endpoint}`, { method: 'POST', headers: dbHeaders }),
                     fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_major_order_status`, { method: 'POST', headers: dbHeaders })
                 ]);
 
@@ -292,7 +355,6 @@
                 }
 
                 const moContainer = document.getElementById('mo-container');
-                // CHANGE: Now shows as long as a name exists, even if not active
                 if (moData && moData.name && moData.name !== 'None') {
                     moContainer.style.display = 'block'; 
                     document.getElementById('mo-name').innerText = `${moData.name}`;
@@ -346,4 +408,3 @@
     </script>
 </body>
 </html>
-
