@@ -27,10 +27,11 @@
             letter-spacing: 1px;
         }
 
-        /* --- NEW: TABS CSS --- */
+        /* --- TABS CSS --- */
         .tabs {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* Allows tabs to stack nicely on very skinny iframes */
             gap: 10px;
             margin-bottom: 15px;
         }
@@ -59,7 +60,6 @@
             background-color: #444;
             color: white;
         }
-        /* --------------------- */
 
         .player-row {
             display: flex;
@@ -247,6 +247,7 @@
     <div class="tabs">
         <button id="tab-global" class="tab active" onclick="setTab('global')">All-Time Clicks</button>
         <button id="tab-mission" class="tab" onclick="setTab('mission')">Major Order</button>
+        <button id="tab-playtime" class="tab" onclick="setTab('playtime')">Playtime</button>
     </div>
 
     <div id="leaderboard-list">
@@ -274,7 +275,6 @@
         const leaderboardContainer = document.getElementById('leaderboard-list');
         const pfpCache = {};
         
-        // NEW: Tab State tracking
         let currentTab = 'global';
 
         const dbHeaders = {
@@ -283,27 +283,24 @@
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         };
 
-        // NEW: Function to switch tabs
         function setTab(tabName) {
-            if (currentTab === tabName) return; // Do nothing if already on this tab
+            if (currentTab === tabName) return; 
             
             currentTab = tabName;
             
-            // Toggle active classes on buttons
             document.getElementById('tab-global').classList.toggle('active', tabName === 'global');
             document.getElementById('tab-mission').classList.toggle('active', tabName === 'mission');
+            document.getElementById('tab-playtime').classList.toggle('active', tabName === 'playtime');
             
-            // Instantly clear the list and show loading text to feel responsive
             leaderboardContainer.innerHTML = '<div class="loading">Fetching data...</div>';
-            
-            // Trigger a fresh load immediately
             loadLeaderboard();
         }
 
         async function loadLeaderboard() {
             try {
-                // Dynamically choose the SQL function based on the active tab
-                const endpoint = currentTab === 'global' ? 'fetch_global_leaderboard' : 'fetch_mission_leaderboard';
+                let endpoint = 'fetch_global_leaderboard';
+                if (currentTab === 'mission') endpoint = 'fetch_mission_leaderboard';
+                if (currentTab === 'playtime') endpoint = 'fetch_playtime_leaderboard';
 
                 const [leaderboardRes, moRes] = await Promise.all([
                     fetch(`${SUPABASE_URL}/rest/v1/rpc/${endpoint}`, { method: 'POST', headers: dbHeaders }),
@@ -333,12 +330,31 @@
                             imageSource = pfpCache[player.username];
                         }
 
+                        // Time Formatting Math
+                        let displayScore = '';
+                        if (currentTab === 'playtime') {
+                            const totalSeconds = player.total_clicks; // This is actually seconds from the SQL alias!
+                            const hours = Math.floor(totalSeconds / 3600);
+                            const minutes = Math.floor((totalSeconds % 3600) / 60);
+                            const seconds = totalSeconds % 60;
+                            
+                            if (hours > 0) {
+                                displayScore = `${hours}h ${minutes}m`;
+                            } else if (minutes > 0) {
+                                displayScore = `${minutes}m ${seconds}s`;
+                            } else {
+                                displayScore = `${seconds}s`;
+                            }
+                        } else {
+                            displayScore = player.total_clicks.toLocaleString();
+                        }
+
                         newHTML += `
                             <div class="player-row">
                                 <div class="rank ${rankClass}">#${rank}</div>
                                 <img src="${imageSource}" class="pfp" id="pfp-${player.username}" />
                                 <div class="username">${player.username}</div>
-                                <div class="score">${player.total_clicks.toLocaleString()}</div>
+                                <div class="score">${displayScore}</div>
                             </div>
                         `;
                     });
