@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Crypto Market</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; 
+            padding: 2vw; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a; 
+            color: white;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; 
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .market-title {
+            font-size: clamp(14px, 4vw, 20px); 
+            font-weight: 900;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+
+        .current-price {
+            font-size: clamp(16px, 5vw, 24px);
+            font-family: monospace;
+            font-weight: bold;
+            color: #4caf50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            flex-grow: 1; /* Automatically scales to fill the iframe */
+            width: 100%;
+            background-color: #222;
+            border-radius: 8px;
+            border: 1px solid #333;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+            padding: 10px;
+            min-height: 0; /* Important for flexbox shrinking */
+        }
+
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px;
+            background-color: #00e5ff; border-radius: 50%;
+            margin-right: 6px; box-shadow: 0 0 8px #00e5ff;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* --- NEW: WALLET UI --- */
+        .wallet-container {
+            display: none; /* Hidden by default unless ?username= is present */
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-top: 2px solid #00e5ff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .wallet-left { font-size: clamp(10px, 3vw, 12px); font-weight: bold; }
+        .wallet-right { display: flex; gap: 15px; text-align: right; }
+        
+        .wallet-stat { display: flex; flex-direction: column; justify-content: center; }
+        
+        .wallet-label { font-size: clamp(8px, 2.5vw, 10px); color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .wallet-value { font-size: clamp(12px, 3.5vw, 16px); font-family: monospace; font-weight: bold; color: white; }
+        .wallet-highlight-green { color: #4caf50; text-shadow: 0 0 5px rgba(76, 175, 80, 0.4); }
+        .wallet-highlight-blue { color: #00e5ff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="market-title"><span class="status-dot"></span> T-COIN / USD</div>
+        <div class="current-price" id="live-price">$0.00</div>
+    </div>
+
+    <div class="chart-wrapper">
+        <canvas id="cryptoChart"></canvas>
+    </div>
+
+    <div id="wallet-container" class="wallet-container">
+        <div class="wallet-left">
+            <div class="wallet-label">CONNECTED WALLET</div>
+            <div id="wallet-user" class="wallet-highlight-blue" style="font-size: clamp(12px, 4vw, 16px); text-transform: uppercase;">USERNAME</div>
+        </div>
+        <div class="wallet-right">
+            <div class="wallet-stat">
+                <span class="wallet-label">HOLDINGS</span>
+                <span id="wallet-crypto" class="wallet-value">0.0000 <span style="font-size: 0.8em; color: #888;">T-COIN</span></span>
+            </div>
+            <div class="wallet-stat">
+                <span class="wallet-label">FIAT VALUE</span>
+                <span id="wallet-fiat-value" class="wallet-value wallet-highlight-green">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://lriizufytmdvxwcyjtqz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyaWl6dWZ5dG1kdnh3Y3lqdHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMzMzOTMsImV4cCI6MjA4NzgwOTM5M30.dDqU0McuLngEptd7vU3rqcE06qTKxDql4h44hFSGwBc';
+
+        const dbHeaders = {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        };
+
+        // --- URL PARSING FOR WALLET ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUsername = urlParams.get('username');
+
+        // If a username is in the URL, unhide the wallet UI
+        if (targetUsername) {
+            document.getElementById('wallet-container').style.display = 'flex';
+            document.getElementById('wallet-user').innerText = targetUsername;
+        }
+
+        // --- CHART SETUP ---
+        const ctx = document.getElementById('cryptoChart').getContext('2d');
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 229, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 229, 255, 0.0)');
+
+        const cryptoChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(50).fill(''), 
+                datasets: [{
+                    label: 'Market Price', data: [],
+                    borderColor: '#00e5ff', backgroundColor: gradient,
+                    borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff', fill: true, tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 800, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#00e5ff',
+                        bodyFont: { family: 'monospace', size: 14 },
+                        callbacks: {
+                            label: function(context) { return '$' + Number(context.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }); },
+                            title: function() { return 'Transaction Price'; }
+                        }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: true, position: 'right',
+                        grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                        ticks: { color: '#888', font: { family: 'monospace' }, callback: function(value) { return '$' + value; } }
+                    }
+                }
+            }
+        });
+
+        // --- DATA FETCHING (POLLS EVERY 3 SECONDS) ---
+        async function updateMarketData() {
+            try {
+                // Fetch the market graph data
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_crypto_history`, { method: 'POST', headers: dbHeaders });
+                if (!res.ok) throw new Error('Failed to fetch crypto data');
+                
+                const data = await res.json();
+                let latestPrice = 0;
+
+                if (data && data.length > 0) {
+                    const prices = data.map(tx => parseFloat(tx.price));
+                    latestPrice = prices[prices.length - 1]; // Grab the newest price
+                    
+                    cryptoChart.data.datasets[0].data = prices;
+                    cryptoChart.data.labels = Array(prices.length).fill(''); 
+                    cryptoChart.update();
+
+                    document.getElementById('live-price').innerText = '$' + latestPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                // If a username was provided, fetch their personal wallet and calculate fiat value
+                if (targetUsername && latestPrice > 0) {
+                    const walletRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_crypto_wallet`, {
+                        method: 'POST',
+                        headers: dbHeaders,
+                        body: JSON.stringify({ target_player_name: targetUsername })
+                    });
+
+                    if (walletRes.ok) {
+                        const walletData = await walletRes.json();
+                        const cryptoOwned = walletData.crypto_balance || 0;
+                        
+                        // The math: How much their crypto is worth right now
+                        const fiatValue = cryptoOwned * latestPrice;
+
+                        document.getElementById('wallet-crypto').innerHTML = `${cryptoOwned.toLocaleString(undefined, { maximumFractionDigits: 4 })} <span style="font-size: 0.8em; color: #888;">T-COIN</span>`;
+                        document.getElementById('wallet-fiat-value').innerText = '$' + fiatValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+
+            } catch (err) {
+                console.error('Market Error:', err);
+            }
+        }
+
+        updateMarketData();
+        setInterval(updateMarketData, 3000);
+    </script>
+</body>
+</html>
