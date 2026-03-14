@@ -8,236 +8,192 @@
         * { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            padding: 2vw 2vw 100px 2vw; 
+            margin: 0; padding: 2vw 2vw 100px 2vw; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: white;
-            overflow-y: auto;
-            overflow-x: hidden;
+            background-color: #1a1a1a; color: white;
+            overflow-y: auto; overflow-x: hidden;
         }
 
         .header {
-            text-align: center;
-            font-weight: 900;
-            font-size: clamp(16px, 5vw, 24px); 
-            margin-bottom: 10px;
-            color: #ffcc00;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            text-align: center; font-weight: 900; font-size: clamp(16px, 5vw, 24px); 
+            margin-bottom: 10px; color: #ffcc00; text-transform: uppercase; letter-spacing: 1px;
         }
 
         /* --- TABS CSS --- */
-        .tabs {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap; /* Allows tabs to stack nicely on very skinny iframes */
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
+        .tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
         .tab {
-            background-color: #333;
-            color: #888;
-            border: 2px solid #444;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: clamp(10px, 3.5vw, 13px);
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
+            background-color: #333; color: #888; border: 2px solid #444; padding: 6px 14px;
+            border-radius: 20px; font-size: clamp(10px, 3.5vw, 13px); font-weight: bold;
+            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
         }
+        .tab.active { background-color: rgba(255, 204, 0, 0.1); color: #ffcc00; border-color: #ffcc00; box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
+        .tab:hover:not(.active) { background-color: #444; color: white; }
 
-        .tab.active {
-            background-color: rgba(255, 204, 0, 0.1);
-            color: #ffcc00;
-            border-color: #ffcc00;
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
-        }
-
-        .tab:hover:not(.active) {
-            background-color: #444;
-            color: white;
-        }
-
+        /* --- LEADERBOARD ROW CSS --- */
         .player-row {
-            display: flex;
-            align-items: center;
-            background-color: #2a2a2a;
-            margin-bottom: 8px;
-            padding: 2vw 3vw;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
-            gap: 8px;
+            display: flex; align-items: center; background-color: #2a2a2a;
+            margin-bottom: 8px; padding: 2vw 3vw; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s, filter 0.1s;
+            gap: 8px; cursor: pointer; 
+            position: relative; overflow: hidden; z-index: 1; 
         }
 
         .player-row:hover {
             transform: scale(1.02);
-            background-color: #333;
+            filter: brightness(1.2); 
         }
 
-        .rank {
-            font-size: clamp(14px, 4vw, 18px);
-            font-weight: bold;
-            min-width: 25px;
-            color: #888;
+        /* Simple Soda Particles */
+        .particles {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; pointer-events: none;
+            background-image:
+                radial-gradient(circle, var(--p-color) 2px, transparent 2.5px),
+                radial-gradient(circle, var(--p-color) 1px, transparent 1.5px);
+            background-size: 60px 30px, 40px 20px;
+            background-position: 0 0, 0 10px;
+            animation: pMove 3s linear infinite;
+            opacity: 0.2; transition: opacity 0.3s;
+        }
+        @keyframes pMove { 
+            0% { background-position: 0 0, 0 10px; } 
+            100% { background-position: 60px 0, 40px 10px; } 
         }
 
+        /* --- RADIAL PARTICLE EMITTER FOR PFP --- */
+        .pfp-aura {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%; z-index: 1; pointer-events: none;
+            box-shadow: 0 0 0px var(--a-color); transition: all 0.4s ease;
+        }
+
+        .sparkle {
+            position: absolute; top: 50%; left: 50%;
+            width: 4px; height: 4px; margin-top: -2px; margin-left: -2px;
+            border-radius: 50%; background-color: var(--a-color);
+            opacity: 0; pointer-events: none;
+            animation: shootOut 2s infinite ease-out; z-index: 0;
+        }
+        
+        /* Spacing them perfectly around the 360 degree circle */
+        .s1 { --rot: 0deg;   animation-delay: 0.0s; width: 6px; height: 6px; }
+        .s2 { --rot: 45deg;  animation-delay: 0.4s; }
+        .s3 { --rot: 90deg;  animation-delay: 0.8s; width: 5px; height: 5px; }
+        .s4 { --rot: 135deg; animation-delay: 0.2s; }
+        .s5 { --rot: 180deg; animation-delay: 0.6s; width: 6px; height: 6px; }
+        .s6 { --rot: 225deg; animation-delay: 1.0s; }
+        .s7 { --rot: 270deg; animation-delay: 0.3s; width: 5px; height: 5px; }
+        .s8 { --rot: 315deg; animation-delay: 0.7s; }
+
+        @keyframes shootOut {
+            0%   { transform: rotate(var(--rot)) translateY(-35px) scale(0); opacity: 0; }
+            30%  { opacity: 1; transform: rotate(var(--rot)) translateY(-45px) scale(1.2); }
+            100% { opacity: 0; transform: rotate(var(--rot)) translateY(-75px) scale(0.2); }
+        }
+
+        .name-col { display: flex; flex-direction: column; justify-content: center; flex-grow: 1; overflow: hidden; min-width: 0; margin-left: 4px; z-index: 2; }
+        .username { font-size: clamp(12px, 4vw, 16px); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+        .row-level { font-size: clamp(9px, 2.5vw, 11px); font-weight: 800; margin-top: 2px; letter-spacing: 0.5px; }
+
+        .rank { font-size: clamp(14px, 4vw, 18px); font-weight: bold; min-width: 25px; color: #888; z-index: 2; }
         .rank-1 { color: #ffd700; text-shadow: 0 0 5px rgba(255,215,0,0.5); }
         .rank-2 { color: #c0c0c0; text-shadow: 0 0 5px rgba(192,192,192,0.5); }
         .rank-3 { color: #cd7f32; text-shadow: 0 0 5px rgba(205,127,50,0.5); }
+        .score { font-weight: bold; color: #4caf50; font-family: monospace; font-size: clamp(12px, 4vw, 18px); flex-shrink: 0; z-index: 2; }
+        .loading { text-align: center; color: #888; font-style: italic; margin-top: 20px; font-size: clamp(12px, 4vw, 16px); }
 
-        .pfp {
-            width: clamp(24px, 8vw, 40px);
-            height: clamp(24px, 8vw, 40px);
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: #444;
-            border: 2px solid #555;
-            flex-shrink: 0;
-        }
+        /* --- VISUAL TIERS --- */
+        .pfp-wrapper { position: relative; margin-bottom: 5px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; padding: 4px; z-index: 2; transition: all 0.4s ease; flex-shrink: 0; }
+        .profile-pfp { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #222; object-fit: cover; background-color: #222; position: relative; z-index: 3; }
+        .row-pfp { width: clamp(24px, 8vw, 40px); height: clamp(24px, 8vw, 40px); border-radius: 50%; border: 2px solid #222; object-fit: cover; background-color: #222; z-index: 3; }
 
-        .username {
-            flex-grow: 1;
-            font-size: clamp(12px, 4vw, 16px);
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            min-width: 0;
-        }
+        /* TIER 1: Bronze */
+        .player-row.tier-1 { border-left: 2px solid transparent; }
+        .profile-card.tier-1 { border-top-color: #444; }
+        .tier-1 .pfp-wrapper { background: linear-gradient(135deg, #cd7f32, #6b3e15); }
+        .tier-1 .pfp-aura { display: none; }
+        .tier-1 .level-bar-fill { background: #cd7f32; }
+        .tier-1-text { color: #cd7f32; }
 
-        .score {
-            font-weight: bold;
-            color: #4caf50;
-            font-family: monospace;
-            font-size: clamp(12px, 4vw, 18px);
-            flex-shrink: 0;
-        }
+        /* TIER 2: Silver */
+        .player-row.tier-2 { background: linear-gradient(90deg, #1d2226, #2a2a2a); border-left: 2px solid #c0c0c0; }
+        .profile-card.tier-2 { background: linear-gradient(to bottom, #1d2226, #1a1a1a); border-top-color: #c0c0c0; }
+        .tier-2 .pfp-wrapper { background: linear-gradient(135deg, #ffffff, #c0c0c0, #777777); box-shadow: 0 0 5px rgba(192,192,192,0.3); }
+        .tier-2 .pfp-aura { box-shadow: 0 0 15px rgba(192,192,192,0.5); } 
+        .tier-2 .level-bar-fill { background: #c0c0c0; }
+        .tier-2-text { color: #c0c0c0; }
 
-        .loading {
-            text-align: center;
-            color: #888;
-            font-style: italic;
-            margin-top: 20px;
-            font-size: clamp(12px, 4vw, 16px);
-        }
+        /* TIER 3: Gold */
+        .player-row.tier-3 { background: linear-gradient(90deg, #2b220d, #2a2a2a); border-left: 2px solid #ffd700; }
+        .profile-card.tier-3 { background: linear-gradient(to bottom, #2b220d, #1a1a1a); border-top-color: #ffd700; }
+        .tier-3 .pfp-wrapper { background: linear-gradient(135deg, #ffd700, #daa520, #8b6508); animation: pulseGold 2s infinite; }
+        .tier-3 .pfp-aura { box-shadow: 0 0 30px rgba(255,215,0,0.8); animation: pulseAura 2s infinite alternate; } 
+        .tier-3 .level-bar-fill { background: #ffd700; }
+        .tier-3-text { color: #ffd700; text-shadow: 0 0 5px rgba(255,215,0,0.5); }
+        @keyframes pulseGold { 0% { box-shadow: 0 0 5px rgba(255,215,0,0.4); } 50% { box-shadow: 0 0 15px rgba(255,215,0,0.8); } 100% { box-shadow: 0 0 5px rgba(255,215,0,0.4); } }
+        @keyframes pulseAura { 0% { box-shadow: 0 0 10px var(--a-color); } 100% { box-shadow: 0 0 40px var(--a-color); } }
+
+        /* TIER 4: Diamond */
+        .player-row.tier-4 { background: linear-gradient(90deg, #0d2529, #2a2a2a); border-left: 2px solid #00e5ff; }
+        .profile-card.tier-4 { background: linear-gradient(to bottom, #0d2529, #1a1a1a); border-top-color: #00e5ff; }
+        .tier-4 .pfp-wrapper { background: linear-gradient(135deg, #00e5ff, #0077ff); box-shadow: 0 0 20px rgba(0,229,255,0.7); }
+        .tier-4 .pfp-aura { box-shadow: 0 0 40px rgba(0,229,255,0.9); animation: pulseAura 1.5s infinite alternate; } 
+        .tier-4 .level-bar-fill { background: linear-gradient(90deg, #0077ff, #00e5ff); }
+        .tier-4 .level-badge { background: #003344; border-color: #00e5ff; color: #00e5ff; text-shadow: 0 0 5px #00e5ff; }
+        .tier-4-text { color: #00e5ff; text-shadow: 0 0 5px rgba(0,229,255,0.5); }
+
+        /* TIER 5: Mythic */
+        .player-row.tier-5 { background: linear-gradient(90deg, #290d26, #2a2a2a); border-left: 2px solid #ff00ff; }
+        .profile-card.tier-5 { background: linear-gradient(to bottom, #290d26, #1a1a1a); border-top-color: #ff00ff; }
+        .tier-5 .pfp-wrapper { background: linear-gradient(45deg, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); background-size: 400%; animation: mythicGlow 3s linear infinite; box-shadow: 0 0 25px rgba(255,0,255,0.6); }
+        .tier-5 .pfp-aura { box-shadow: 0 0 50px rgba(255,0,255,1); animation: mythicAura 1s infinite alternate; } 
+        .tier-5 .level-bar-fill { background: linear-gradient(90deg, #ff00ff, #00e5ff, #ffcc00); background-size: 200%; animation: mythicGlow 2s linear infinite; }
+        .tier-5 .level-badge { background: #330033; border-color: #ff00ff; color: #ff99ff; text-shadow: 0 0 8px #ff00ff; }
+        .tier-5-text { color: #ff99ff; text-shadow: 0 0 8px #ff00ff; }
+        @keyframes mythicGlow { 0% { background-position: 0 0; } 100% { background-position: 400% 0; } }
+        @keyframes mythicAura { 0% { box-shadow: 0 0 20px var(--a-color); } 100% { box-shadow: 0 0 60px var(--a-color); } }
 
         /* --- MAJOR ORDER FOOTER CSS --- */
-        .mo-footer {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background-color: #1a1a1a;
-            border-top: 2px solid #ffcc00;
-            padding: 10px 15px;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.9);
-            z-index: 100;
-        }
-
-        .mo-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 8px;
-        }
-
-        .mo-title {
-            font-size: clamp(12px, 3.5vw, 16px);
-            font-weight: 900;
-            color: #ffcc00;
-            text-transform: uppercase;
-            text-shadow: 0 0 8px rgba(255,204,0,0.4);
-        }
-
-        .mo-reward {
-            font-size: clamp(10px, 3vw, 13px);
-            font-weight: bold;
-            color: #00e5ff; 
-            text-transform: uppercase;
-            text-shadow: 0 0 5px rgba(0,229,255,0.5);
-            background: rgba(0, 229, 255, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid rgba(0,229,255,0.3);
-        }
-
-        .mo-progress-bar-bg {
-            width: 100%;
-            height: 16px;
-            background-color: #0a0a0a;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #333;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-            margin-bottom: 6px;
-        }
-
-        .mo-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff8800, #ffcc00);
-            width: 0%; 
-            transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-        }
-
-        .mo-progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: repeating-linear-gradient(
-                -45deg,
-                rgba(255, 255, 255, 0.25),
-                rgba(255, 255, 255, 0.25) 10px,
-                transparent 10px,
-                transparent 20px
-            );
-            background-size: 28px 28px;
-            animation: energyFlow 1s linear infinite;
-        }
-
-        .mo-progress-fill::before {
-            content: '';
-            position: absolute;
-            right: 0; 
-            top: 50%;
-            transform: translateY(-50%);
-            width: 6px;
-            height: 14px;
-            background-color: #ffffff;
-            border-radius: 50%;
-            z-index: 10;
-            animation: fizzleSparks 0.15s infinite alternate;
-        }
-
-        @keyframes energyFlow {
-            0% { background-position: 0 0; }
-            100% { background-position: 28px 0; }
-        }
-
-        @keyframes fizzleSparks {
-            0% {
-                opacity: 0.8;
-                box-shadow: 0 0 8px 2px #ffffff, -2px -5px 3px #ffcc00, 2px 6px 4px #ff8800, 0 0 15px 5px #ffcc00;
-            }
-            100% {
-                opacity: 1;
-                box-shadow: 0 0 12px 4px #ffffff, 3px -6px 4px #ff8800, -1px 5px 2px #ffcc00, 0 0 25px 8px #ffcc00;
-            }
-        }
-
-        .mo-stats {
-            font-size: clamp(10px, 3vw, 12px);
-            color: #ccc;
-            display: flex;
-            justify-content: space-between;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        
+        .mo-footer { position: fixed; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; border-top: 2px solid #ffcc00; padding: 10px 15px; box-shadow: 0 -10px 20px rgba(0,0,0,0.9); z-index: 100; }
+        .mo-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+        .mo-title { font-size: clamp(12px, 3.5vw, 16px); font-weight: 900; color: #ffcc00; text-transform: uppercase; text-shadow: 0 0 8px rgba(255,204,0,0.4); }
+        .mo-reward { font-size: clamp(10px, 3vw, 13px); font-weight: bold; color: #00e5ff; text-transform: uppercase; text-shadow: 0 0 5px rgba(0,229,255,0.5); background: rgba(0, 229, 255, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(0,229,255,0.3); }
+        .mo-progress-bar-bg { width: 100%; height: 16px; background-color: #0a0a0a; border-radius: 8px; overflow: hidden; border: 1px solid #333; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 6px; }
+        .mo-progress-fill { height: 100%; background: linear-gradient(90deg, #ff8800, #ffcc00); width: 0%; transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; }
+        .mo-progress-fill::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25) 10px, transparent 10px, transparent 20px); background-size: 28px 28px; animation: energyFlow 1s linear infinite; }
+        .mo-progress-fill::before { content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 14px; background-color: #ffffff; border-radius: 50%; z-index: 10; animation: fizzleSparks 0.15s infinite alternate; }
+        @keyframes energyFlow { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+        @keyframes fizzleSparks { 0% { opacity: 0.8; box-shadow: 0 0 8px 2px #ffffff, -2px -5px 3px #ffcc00, 2px 6px 4px #ff8800, 0 0 15px 5px #ffcc00; } 100% { opacity: 1; box-shadow: 0 0 12px 4px #ffffff, 3px -6px 4px #ff8800, -1px 5px 2px #ffcc00, 0 0 25px 8px #ffcc00; } }
+        .mo-stats { font-size: clamp(10px, 3vw, 12px); color: #ccc; display: flex; justify-content: space-between; font-family: monospace; font-weight: bold; }
         .mo-percentage { color: #ffcc00; }
         .mo-completed-text { color: #4caf50; font-weight: 900; }
+
+        /* --- PROFILE OVERLAY CSS --- */
+        .profile-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.85); z-index: 200; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
+        .profile-card { background-color: #1a1a1a; border: 2px solid #333; border-top: 4px solid #444; border-radius: 12px; width: 100%; max-width: 350px; padding: 25px 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); position: relative; display: flex; flex-direction: column; align-items: center; max-height: 90vh; overflow-y: auto; transition: background 0.3s, border-color 0.3s; z-index: 1; }
+        .close-btn { position: absolute; top: 10px; right: 15px; color: #666; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1; transition: color 0.2s; z-index: 10; }
+        .close-btn:hover { color: #ff3333; }
+        .level-container { width: 100%; margin-bottom: 20px; text-align: center; z-index: 2; position: relative; }
+        .level-text-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+        .level-badge { background: #333; color: white; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-family: monospace; border: 1px solid #555; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .level-bar-bg { width: 100%; height: 10px; background: #0a0a0a; border-radius: 5px; border: 1px solid #333; overflow: hidden; position: relative; }
+        .level-bar-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .profile-name { font-size: 22px; font-weight: 900; color: white; margin-bottom: 5px; text-align: center; z-index: 2; position: relative; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 20px; z-index: 2; position: relative; }
+        .stat-box { background-color: #252525; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #333; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .stat-value { font-size: 16px; font-weight: bold; color: #4caf50; font-family: monospace; }
+        .stat-value.gold { color: #ffcc00; }
+        .stat-value.blue { color: #00e5ff; }
+
+        /* --- INVENTORY CSS --- */
+        .inventory-section { width: 100%; border-top: 1px solid #333; padding-top: 15px; z-index: 2; position: relative; }
+        .inventory-header { font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .inventory-container { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        .inv-item { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; background-color: #222; border: 1px solid #444; }
+        .rarity-Common { color: #b0b0b0; border-color: #555; }
+        .rarity-Rare { color: #00bfff; border-color: rgba(0,191,255,0.4); background-color: rgba(0,191,255,0.1); }
+        .rarity-Epic { color: #a335ee; border-color: rgba(163,53,238,0.4); background-color: rgba(163,53,238,0.1); }
+        .rarity-Legendary { color: #ff8000; border-color: rgba(255,128,0,0.4); background-color: rgba(255,128,0,0.1); }
     </style>
 </head>
 <body>
@@ -268,13 +224,52 @@
         </div>
     </div>
 
+    <div id="profile-modal" class="profile-modal">
+        <div class="profile-card" id="profile-card">
+            <div class="particles"></div> <button class="close-btn" onclick="closeProfile()">×</button>
+            
+            <div class="pfp-wrapper">
+                <div class="pfp-aura">
+                    <div class="sparkle s1"></div>
+                    <div class="sparkle s2"></div>
+                    <div class="sparkle s3"></div>
+                    <div class="sparkle s4"></div>
+                    <div class="sparkle s5"></div>
+                    <div class="sparkle s6"></div>
+                    <div class="sparkle s7"></div>
+                    <div class="sparkle s8"></div>
+                </div>
+                <img id="modal-pfp" class="profile-pfp" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
+            </div>
+            
+            <div id="modal-name" class="profile-name">Loading...</div>
+            <div class="level-container">
+                <div class="level-text-row">
+                    <span id="modal-level-badge" class="level-badge">LVL 1</span>
+                    <span id="modal-level-text" style="color: #ccc;">0 / 5,000</span>
+                </div>
+                <div class="level-bar-bg">
+                    <div id="modal-level-fill" class="level-bar-fill"></div>
+                </div>
+            </div>
+            <div id="modal-stats" class="stat-grid">
+                <div class="loading">Fetching profile...</div>
+            </div>
+            <div class="inventory-section">
+                <div class="inventory-header">Notable Items</div>
+                <div id="modal-inventory" class="inventory-container">
+                    <div class="loading" style="margin-top: 0;">Loading items...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://lriizufytmdvxwcyjtqz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyaWl6dWZ5dG1kdnh3Y3lqdHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMzMzOTMsImV4cCI6MjA4NzgwOTM5M30.dDqU0McuLngEptd7vU3rqcE06qTKxDql4h44hFSGwBc';
 
         const leaderboardContainer = document.getElementById('leaderboard-list');
         const pfpCache = {};
-        
         let currentTab = 'global';
 
         const dbHeaders = {
@@ -285,13 +280,10 @@
 
         function setTab(tabName) {
             if (currentTab === tabName) return; 
-            
             currentTab = tabName;
-            
             document.getElementById('tab-global').classList.toggle('active', tabName === 'global');
             document.getElementById('tab-mission').classList.toggle('active', tabName === 'mission');
             document.getElementById('tab-playtime').classList.toggle('active', tabName === 'playtime');
-            
             leaderboardContainer.innerHTML = '<div class="loading">Fetching data...</div>';
             loadLeaderboard();
         }
@@ -308,7 +300,6 @@
                 ]);
 
                 if (!leaderboardRes.ok || !moRes.ok) throw new Error('Database error');
-                
                 const players = await leaderboardRes.json();
                 const moData = await moRes.json();
 
@@ -326,34 +317,48 @@
                         if (rank === 3) rankClass = 'rank-3';
 
                         let imageSource = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; 
-                        if (pfpCache[player.username]) {
-                            imageSource = pfpCache[player.username];
-                        }
+                        if (pfpCache[player.username]) { imageSource = pfpCache[player.username]; }
 
-                        // Time Formatting Math
                         let displayScore = '';
                         if (currentTab === 'playtime') {
-                            const totalSeconds = player.total_clicks; // This is actually seconds from the SQL alias!
+                            const totalSeconds = player.total_clicks; 
                             const hours = Math.floor(totalSeconds / 3600);
                             const minutes = Math.floor((totalSeconds % 3600) / 60);
                             const seconds = totalSeconds % 60;
-                            
-                            if (hours > 0) {
-                                displayScore = `${hours}h ${minutes}m`;
-                            } else if (minutes > 0) {
-                                displayScore = `${minutes}m ${seconds}s`;
-                            } else {
-                                displayScore = `${seconds}s`;
-                            }
+                            if (hours > 0) displayScore = `${hours}h ${minutes}m`;
+                            else if (minutes > 0) displayScore = `${minutes}m ${seconds}s`;
+                            else displayScore = `${seconds}s`;
                         } else {
                             displayScore = player.total_clicks.toLocaleString();
                         }
 
+                        // --- UPDATED MATH: 5000 per level ---
+                        const statForLevel = player.lifetime_clicks || player.total_clicks || 0;
+                        const currentLevel = Math.floor(statForLevel / 5000) + 1;
+
+                        // Tier Upgrades every 4 levels
+                        let tierClass = 'tier-1';
+                        let particleColor = 'rgba(255,255,255,0.05)'; 
+
+                        if (currentLevel >= 4)  { tierClass = 'tier-2'; particleColor = 'rgba(192,192,192,0.15)'; }
+                        if (currentLevel >= 8)  { tierClass = 'tier-3'; particleColor = 'rgba(255,215,0,0.2)'; }
+                        if (currentLevel >= 12) { tierClass = 'tier-4'; particleColor = 'rgba(0,229,255,0.25)'; }
+                        if (currentLevel >= 16) { tierClass = 'tier-5'; particleColor = 'rgba(255,0,255,0.35)'; }
+
                         newHTML += `
-                            <div class="player-row">
+                            <div class="player-row ${tierClass}" onclick="openProfile('${player.username}')" style="--p-color: ${particleColor};">
+                                <div class="particles"></div>
                                 <div class="rank ${rankClass}">#${rank}</div>
-                                <img src="${imageSource}" class="pfp" id="pfp-${player.username}" />
-                                <div class="username">${player.username}</div>
+                                
+                                <div class="pfp-wrapper" style="margin-bottom:0; padding:3px;">
+                                    <img src="${imageSource}" class="row-pfp" id="pfp-${player.username}" />
+                                </div>
+                                
+                                <div class="name-col">
+                                    <div class="username">${player.username}</div>
+                                    <div class="row-level ${tierClass}-text">LVL ${currentLevel}</div>
+                                </div>
+                                
                                 <div class="score">${displayScore}</div>
                             </div>
                         `;
@@ -363,11 +368,7 @@
                     document.documentElement.scrollTop = currentScroll;
                     document.body.scrollTop = currentScroll;
 
-                    players.forEach(player => {
-                        if (!pfpCache[player.username]) {
-                            fetchCodeTorchPFP(player.username);
-                        }
-                    });
+                    players.forEach(player => { if (!pfpCache[player.username]) { fetchCodeTorchPFP(player.username); } });
                 }
 
                 const moContainer = document.getElementById('mo-container');
@@ -384,21 +385,15 @@
                     
                     const percentEl = document.getElementById('mo-percent-text');
                     if (rawPercentage >= 100) {
-                        percentEl.innerText = "MISSION COMPLETED";
-                        percentEl.className = "mo-completed-text";
+                        percentEl.innerText = "MISSION COMPLETED"; percentEl.className = "mo-completed-text";
                     } else {
                         let displayPercentage = rawPercentage.toFixed(1);
                         if (displayPercentage.endsWith('.0')) displayPercentage = Math.round(rawPercentage);
-                        percentEl.innerText = `${displayPercentage}%`;
-                        percentEl.className = "mo-percentage";
+                        percentEl.innerText = `${displayPercentage}%`; percentEl.className = "mo-percentage";
                     }
-                } else {
-                    moContainer.style.display = 'none';
-                }
+                } else { moContainer.style.display = 'none'; }
 
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
+            } catch (error) { console.error('Error fetching data:', error); }
         }
 
         async function fetchCodeTorchPFP(username) {
@@ -408,14 +403,103 @@
                     const data = await res.json();
                     if (data.pfp) {
                         pfpCache[username] = data.pfp;
-                        const imgElement = document.getElementById(`pfp-${username}`);
-                        if (imgElement) {
-                            imgElement.src = data.pfp;
-                        }
+                        const imgElements = document.querySelectorAll(`#pfp-${username}`);
+                        imgElements.forEach(el => el.src = data.pfp);
                     }
                 }
-            } catch (e) {
-                console.log(`Could not load PFP for ${username}`);
+            } catch (e) { console.log(`Could not load PFP for ${username}`); }
+        }
+
+        function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
+
+        async function openProfile(username) {
+            document.getElementById('profile-modal').style.display = 'flex';
+            document.getElementById('modal-name').innerText = username;
+            
+            const card = document.getElementById('profile-card');
+            card.className = 'profile-card tier-1';
+            card.style.setProperty('--p-color', 'transparent'); 
+            card.style.setProperty('--a-color', 'transparent');
+            
+            document.getElementById('modal-level-badge').innerText = 'LVL ?';
+            document.getElementById('modal-level-text').innerText = '0 / 5,000';
+            document.getElementById('modal-level-fill').style.width = '0%';
+            
+            document.getElementById('modal-stats').innerHTML = '<div class="loading" style="grid-column: span 2;">Fetching profile...</div>';
+            document.getElementById('modal-inventory').innerHTML = '<div class="loading" style="margin-top:0;">Loading items...</div>';
+            
+            const modalPfp = document.getElementById('modal-pfp');
+            modalPfp.src = pfpCache[username] || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
+            try {
+                const [profileRes, invRes] = await Promise.all([
+                    fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_player_info`, { method: 'POST', headers: dbHeaders, body: JSON.stringify({ target_player_name: username }) }),
+                    fetch(`${SUPABASE_URL}/rest/v1/rpc/fetch_notable_inventory`, { method: 'POST', headers: dbHeaders, body: JSON.stringify({ target_player_name: username }) })
+                ]);
+
+                const profileData = await profileRes.json();
+                const invData = await invRes.json();
+
+                if (profileData.status === 'SUCCESS' && profileData.profile) {
+                    const p = profileData.profile;
+                    const totalClicks = p.total_clicks || 0;
+                    
+                    // --- UPDATED MATH: 5000 per level ---
+                    const currentLevel = Math.floor(totalClicks / 5000) + 1;
+                    const clicksInCurrentLevel = totalClicks % 5000;
+                    const progressPercent = (clicksInCurrentLevel / 5000) * 100;
+                    
+                    let tierClass = 'tier-1';
+                    let particleColor = 'rgba(255,255,255,0.05)';
+                    let auraColor = 'transparent';
+                    
+                    // Tier Upgrades every 4 levels
+                    if (currentLevel >= 4)  { tierClass = 'tier-2'; particleColor = 'rgba(192,192,192,0.15)'; auraColor = 'rgba(192,192,192,0.6)'; } 
+                    if (currentLevel >= 8)  { tierClass = 'tier-3'; particleColor = 'rgba(255,215,0,0.2)';   auraColor = 'rgba(255,215,0,0.8)';   } 
+                    if (currentLevel >= 12) { tierClass = 'tier-4'; particleColor = 'rgba(0,229,255,0.25)';  auraColor = 'rgba(0,229,255,0.9)';  } 
+                    if (currentLevel >= 16) { tierClass = 'tier-5'; particleColor = 'rgba(255,0,255,0.35)';  auraColor = 'rgba(255,0,255,1)';    } 
+
+                    card.className = `profile-card ${tierClass}`;
+                    card.style.setProperty('--p-color', particleColor);
+                    card.style.setProperty('--a-color', auraColor);
+                    
+                    document.getElementById('modal-level-badge').innerText = `LVL ${currentLevel}`;
+                    document.getElementById('modal-level-text').innerText = `${clicksInCurrentLevel.toLocaleString()} / 5,000`;
+                    setTimeout(() => { document.getElementById('modal-level-fill').style.width = `${progressPercent}%`; }, 50);
+
+                    let playText = '0s';
+                    if (p.playtime_seconds) {
+                        const h = Math.floor(p.playtime_seconds / 3600);
+                        const m = Math.floor((p.playtime_seconds % 3600) / 60);
+                        const s = p.playtime_seconds % 60;
+                        if (h > 0) playText = `${h}h ${m}m`;
+                        else if (m > 0) playText = `${m}m ${s}s`;
+                        else playText = `${s}s`;
+                    }
+
+                    document.getElementById('modal-stats').innerHTML = `
+                        <div class="stat-box"><div class="stat-label">Total Clicks</div><div class="stat-value">${totalClicks.toLocaleString()}</div></div>
+                        <div class="stat-box"><div class="stat-label">Currency</div><div class="stat-value gold">${(p.balance || 0).toLocaleString()}</div></div>
+                        <div class="stat-box"><div class="stat-label">Playtime</div><div class="stat-value blue">${playText}</div></div>
+                        <div class="stat-box"><div class="stat-label">Mission Contrib</div><div class="stat-value">${(p.current_mission_contribution || 0).toLocaleString()}</div></div>
+                    `;
+                } else { document.getElementById('modal-stats').innerHTML = '<div class="loading" style="grid-column: span 2;">Player not found.</div>'; }
+
+                if (invData && invData.length > 0) {
+                    let invHTML = '';
+                    invData.forEach(item => {
+                        let rarityName = 'Common';
+                        if (item.rarity === 1) rarityName = 'Common'; if (item.rarity === 2) rarityName = 'Rare';
+                        if (item.rarity === 3) rarityName = 'Epic'; if (item.rarity >= 4) rarityName = 'Legendary'; 
+                        invHTML += `<div class="inv-item rarity-${rarityName}">${item.item_name}</div>`;
+                    });
+                    document.getElementById('modal-inventory').innerHTML = invHTML;
+                } else { document.getElementById('modal-inventory').innerHTML = '<div class="loading" style="margin-top:0;">No items found.</div>'; }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('modal-stats').innerHTML = '<div class="loading" style="grid-column: span 2;">Error loading data.</div>';
+                document.getElementById('modal-inventory').innerHTML = '<div class="loading" style="margin-top:0;">Error loading items.</div>';
             }
         }
 
